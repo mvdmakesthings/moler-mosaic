@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moler Mosaic - Large Format Artwork Printing</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -42,7 +42,10 @@
                     </button>
                 </div>
                 <div id="previewContainer" class="text-center hidden">
-                    <img id="previewImage" src="" alt="Uploaded artwork" class="max-w-full max-h-48 mx-auto rounded border">
+                    <div class="relative inline-block">
+                        <img id="previewImage" src="" alt="Uploaded artwork" class="max-w-full max-h-48 mx-auto rounded border">
+                        <canvas id="previewOverlay" class="absolute top-0 left-0 w-full h-full pointer-events-none"></canvas>
+                    </div>
                     <p id="imageSize" class="text-sm text-gray-600 mt-2"></p>
                 </div>
             </div>

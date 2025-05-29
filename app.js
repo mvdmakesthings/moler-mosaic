@@ -12,6 +12,7 @@ const fileInput = document.getElementById('fileInput');
 const uploadButton = document.getElementById('uploadButton');
 const previewContainer = document.getElementById('previewContainer');
 const previewImage = document.getElementById('previewImage');
+const previewOverlay = document.getElementById('previewOverlay');
 const imageSize = document.getElementById('imageSize');
 const widthInput = document.getElementById('width');
 const heightInput = document.getElementById('height');
@@ -26,12 +27,13 @@ const segmentsGrid = document.getElementById('segmentsGrid');
 let uploadedImage = null;
 let segments = [];
 let isProcessing = false;
+let isAdjustingDimensions = false; // Flag to prevent infinite loops
 
 // Event Listeners
 uploadButton.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', handleImageUpload);
-widthInput.addEventListener('input', updateEstimatedSegments);
-heightInput.addEventListener('input', updateEstimatedSegments);
+widthInput.addEventListener('input', () => handleDimensionChange('width'));
+heightInput.addEventListener('input', () => handleDimensionChange('height'));
 generateButton.addEventListener('click', generateSegments);
 downloadAllButton.addEventListener('click', downloadAllSegments);
 
@@ -44,6 +46,120 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.remove();
     }, 3000);
+}
+
+function drawSegmentationPreview() {
+    if (!uploadedImage) return;
+
+    // Get the actual displayed size of the image
+    const displayWidth = previewImage.clientWidth;
+    const displayHeight = previewImage.clientHeight;
+
+    // Set canvas size to match the displayed image size
+    previewOverlay.width = displayWidth;
+    previewOverlay.height = displayHeight;
+
+    const ctx = previewOverlay.getContext('2d');
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
+
+    // Calculate printable area (excluding safe margins)
+    const printableWidth = (PAPER_WIDTH_INCHES - 2 * SAFE_MARGIN_INCHES) * DPI;
+    const printableHeight = (PAPER_HEIGHT_INCHES - 2 * SAFE_MARGIN_INCHES) * DPI;
+
+    // Calculate how many segments we need
+    const outputWidthPx = parseFloat(widthInput.value) * DPI;
+    const outputHeightPx = parseFloat(heightInput.value) * DPI;
+
+    // Calculate aspect ratios
+    const originalAspectRatio = uploadedImage.width / uploadedImage.height;
+    const targetAspectRatio = outputWidthPx / outputHeightPx;
+
+    // Calculate scaled dimensions that maintain aspect ratio
+    let scaledWidth, scaledHeight;
+    if (originalAspectRatio > targetAspectRatio) {
+        scaledWidth = outputWidthPx;
+        scaledHeight = outputWidthPx / originalAspectRatio;
+    } else {
+        scaledHeight = outputHeightPx;
+        scaledWidth = outputHeightPx * originalAspectRatio;
+    }
+
+    const cols = Math.ceil(outputWidthPx / (printableWidth - OVERLAP_INCHES * DPI));
+    const rows = Math.ceil(outputHeightPx / (printableHeight - OVERLAP_INCHES * DPI));
+
+    // Scale factors to convert from output size to display size
+    const scaleX = displayWidth / outputWidthPx;
+    const scaleY = displayHeight / outputHeightPx;
+
+    // Draw segment boxes
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    ctx.lineWidth = 2;
+
+    // Draw the scaled image boundary
+    ctx.strokeStyle = 'rgba(0, 0, 255, 0.3)';
+    ctx.strokeRect(0, 0, scaledWidth * scaleX, scaledHeight * scaleY);
+
+    // Draw segment boxes
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            // Calculate source position with overlap
+            const sourceX = col * (printableWidth - OVERLAP_INCHES * DPI);
+            const sourceY = row * (printableHeight - OVERLAP_INCHES * DPI);
+
+            // Calculate actual segment size (may be smaller for edge pieces)
+            const segmentWidth = Math.min(printableWidth, outputWidthPx - sourceX);
+            const segmentHeight = Math.min(printableHeight, outputHeightPx - sourceY);
+
+            // Check if this segment contains any part of the image
+            const segmentRight = sourceX + segmentWidth;
+            const segmentBottom = sourceY + segmentHeight;
+
+            // Skip if segment is completely outside the image area
+            if (sourceX >= scaledWidth || 
+                sourceY >= scaledHeight || 
+                segmentRight <= 0 || 
+                segmentBottom <= 0) {
+                continue;
+            }
+
+            // Draw the segment box
+            ctx.strokeRect(
+                sourceX * scaleX,
+                sourceY * scaleY,
+                segmentWidth * scaleX,
+                segmentHeight * scaleY
+            );
+
+            // Add segment number
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+            ctx.font = '12px Arial';
+            ctx.fillText(`${row + 1}-${col + 1}`, sourceX * scaleX + 5, sourceY * scaleY + 15);
+        }
+    }
+}
+
+function handleDimensionChange(changedDimension) {
+    if (!uploadedImage || isAdjustingDimensions) return;
+    
+    isAdjustingDimensions = true;
+    
+    const originalAspectRatio = uploadedImage.width / uploadedImage.height;
+    const width = parseFloat(widthInput.value) || 0;
+    const height = parseFloat(heightInput.value) || 0;
+    
+    if (changedDimension === 'width') {
+        // Adjust height based on width
+        const newHeight = width / originalAspectRatio;
+        heightInput.value = newHeight.toFixed(2);
+    } else {
+        // Adjust width based on height
+        const newWidth = height * originalAspectRatio;
+        widthInput.value = newWidth.toFixed(2);
+    }
+    
+    updateEstimatedSegments();
+    isAdjustingDimensions = false;
 }
 
 function handleImageUpload(event) {
@@ -63,7 +179,24 @@ function handleImageUpload(event) {
         previewContainer.classList.remove('hidden');
         previewImage.src = img.src;
         imageSize.textContent = `Original size: ${img.width} × ${img.height} pixels`;
+        
+        // Set initial dimensions based on aspect ratio
+        const originalAspectRatio = img.width / img.height;
+        const currentWidth = parseFloat(widthInput.value) || 24;
+        const currentHeight = parseFloat(heightInput.value) || 18;
+        const currentAspectRatio = currentWidth / currentHeight;
+        
+        isAdjustingDimensions = true;
+        if (Math.abs(originalAspectRatio - currentAspectRatio) > 0.01) {
+            // If aspect ratios are significantly different, adjust height to match width
+            const newHeight = currentWidth / originalAspectRatio;
+            heightInput.value = newHeight.toFixed(2);
+        }
+        isAdjustingDimensions = false;
+        
         updateEstimatedSegments();
+        // Draw segmentation preview after image loads
+        previewImage.onload = drawSegmentationPreview;
         showToast('Image uploaded successfully!');
     };
     img.onerror = () => {
@@ -76,10 +209,61 @@ function updateEstimatedSegments() {
     const width = parseFloat(widthInput.value) || 0;
     const height = parseFloat(heightInput.value) || 0;
     
-    const cols = Math.ceil((width * DPI) / ((PAPER_WIDTH_INCHES - 1) * DPI));
-    const rows = Math.ceil((height * DPI) / ((PAPER_HEIGHT_INCHES - 1) * DPI));
+    // Calculate printable area (excluding safe margins)
+    const printableWidth = (PAPER_WIDTH_INCHES - 2 * SAFE_MARGIN_INCHES) * DPI;
+    const printableHeight = (PAPER_HEIGHT_INCHES - 2 * SAFE_MARGIN_INCHES) * DPI;
     
-    estimatedSegments.textContent = `${cols} × ${rows} = ${cols * rows}`;
+    // Calculate output dimensions in pixels
+    const outputWidthPx = width * DPI;
+    const outputHeightPx = height * DPI;
+    
+    // Calculate number of segments needed
+    const cols = Math.ceil(outputWidthPx / (printableWidth - OVERLAP_INCHES * DPI));
+    const rows = Math.ceil(outputHeightPx / (printableHeight - OVERLAP_INCHES * DPI));
+    
+    // Calculate total segments, excluding empty ones
+    let totalSegments = 0;
+    if (uploadedImage) {
+        // Calculate scaled dimensions that maintain aspect ratio
+        const originalAspectRatio = uploadedImage.width / uploadedImage.height;
+        const targetAspectRatio = outputWidthPx / outputHeightPx;
+        
+        let scaledWidth, scaledHeight;
+        if (originalAspectRatio > targetAspectRatio) {
+            scaledWidth = outputWidthPx;
+            scaledHeight = outputWidthPx / originalAspectRatio;
+        } else {
+            scaledHeight = outputHeightPx;
+            scaledWidth = outputHeightPx * originalAspectRatio;
+        }
+        
+        // Count only segments that contain image content
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const sourceX = col * (printableWidth - OVERLAP_INCHES * DPI);
+                const sourceY = row * (printableHeight - OVERLAP_INCHES * DPI);
+                const segmentWidth = Math.min(printableWidth, outputWidthPx - sourceX);
+                const segmentHeight = Math.min(printableHeight, outputHeightPx - sourceY);
+                
+                const segmentRight = sourceX + segmentWidth;
+                const segmentBottom = sourceY + segmentHeight;
+                
+                if (sourceX < scaledWidth && 
+                    sourceY < scaledHeight && 
+                    segmentRight > 0 && 
+                    segmentBottom > 0) {
+                    totalSegments++;
+                }
+            }
+        }
+    } else {
+        totalSegments = cols * rows;
+    }
+    
+    estimatedSegments.textContent = `${cols} × ${rows} = ${totalSegments}`;
+    
+    // Update segmentation preview when dimensions change
+    drawSegmentationPreview();
 }
 
 function drawRegistrationMark(ctx, x, y, size = REGISTRATION_MARK_SIZE) {
@@ -130,18 +314,12 @@ async function generateSegments() {
         // Calculate scaled dimensions that maintain aspect ratio
         let scaledWidth, scaledHeight;
         if (originalAspectRatio > targetAspectRatio) {
-            // Image is wider than target - fit to width
             scaledWidth = outputWidthPx;
             scaledHeight = outputWidthPx / originalAspectRatio;
         } else {
-            // Image is taller than target - fit to height
             scaledHeight = outputHeightPx;
             scaledWidth = outputHeightPx * originalAspectRatio;
         }
-
-        // Calculate centering offsets
-        const offsetX = (outputWidthPx - scaledWidth) / 2;
-        const offsetY = (outputHeightPx - scaledHeight) / 2;
 
         const cols = Math.ceil(outputWidthPx / (printableWidth - OVERLAP_INCHES * DPI));
         const rows = Math.ceil(outputHeightPx / (printableHeight - OVERLAP_INCHES * DPI));
@@ -158,8 +336,8 @@ async function generateSegments() {
         scaledCtx.fillStyle = '#ffffff';
         scaledCtx.fillRect(0, 0, outputWidthPx, outputHeightPx);
 
-        // Draw scaled image centered
-        scaledCtx.drawImage(uploadedImage, offsetX, offsetY, scaledWidth, scaledHeight);
+        // Draw scaled image at top-left
+        scaledCtx.drawImage(uploadedImage, 0, 0, scaledWidth, scaledHeight);
 
         // Generate each segment
         for (let row = 0; row < rows; row++) {
@@ -175,14 +353,12 @@ async function generateSegments() {
                 // Check if this segment contains any part of the image
                 const segmentRight = sourceX + segmentWidth;
                 const segmentBottom = sourceY + segmentHeight;
-                const imageRight = offsetX + scaledWidth;
-                const imageBottom = offsetY + scaledHeight;
 
                 // Skip if segment is completely outside the image area
-                if (sourceX >= imageRight || 
-                    sourceY >= imageBottom || 
-                    segmentRight <= offsetX || 
-                    segmentBottom <= offsetY) {
+                if (sourceX >= scaledWidth || 
+                    sourceY >= scaledHeight || 
+                    segmentRight <= 0 || 
+                    segmentBottom <= 0) {
                     continue;
                 }
 
