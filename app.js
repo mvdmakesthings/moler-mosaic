@@ -3,7 +3,9 @@ const PAPER_WIDTH_INCHES = 8.5;
 const PAPER_HEIGHT_INCHES = 11;
 const DPI = 300; // High quality for printing
 const OVERLAP_INCHES = 0.25; // Quarter inch overlap for alignment
-const MARGIN_INCHES = 0.5; // Half inch margin from paper edges
+const SAFE_MARGIN_INCHES = 0.25; // Safe margin for printing
+const REGISTRATION_MARK_SIZE = 15; // Size of registration marks in pixels
+const REGISTRATION_MARK_OFFSET = 5; // Offset from safe margin edge
 
 // DOM Elements
 const fileInput = document.getElementById('fileInput');
@@ -80,7 +82,7 @@ function updateEstimatedSegments() {
     estimatedSegments.textContent = `${cols} × ${rows} = ${cols * rows}`;
 }
 
-function drawRegistrationMark(ctx, x, y, size = 20) {
+function drawRegistrationMark(ctx, x, y, size = REGISTRATION_MARK_SIZE) {
     ctx.save();
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 2;
@@ -113,13 +115,33 @@ async function generateSegments() {
     generateButton.innerHTML = '<div class="spinner mx-auto"></div>';
 
     try {
-        // Calculate printable area (excluding margins)
-        const printableWidth = (PAPER_WIDTH_INCHES - 2 * MARGIN_INCHES) * DPI;
-        const printableHeight = (PAPER_HEIGHT_INCHES - 2 * MARGIN_INCHES) * DPI;
+        // Calculate printable area (excluding safe margins)
+        const printableWidth = (PAPER_WIDTH_INCHES - 2 * SAFE_MARGIN_INCHES) * DPI;
+        const printableHeight = (PAPER_HEIGHT_INCHES - 2 * SAFE_MARGIN_INCHES) * DPI;
 
         // Calculate how many segments we need
         const outputWidthPx = parseFloat(widthInput.value) * DPI;
         const outputHeightPx = parseFloat(heightInput.value) * DPI;
+
+        // Calculate aspect ratios
+        const originalAspectRatio = uploadedImage.width / uploadedImage.height;
+        const targetAspectRatio = outputWidthPx / outputHeightPx;
+
+        // Calculate scaled dimensions that maintain aspect ratio
+        let scaledWidth, scaledHeight;
+        if (originalAspectRatio > targetAspectRatio) {
+            // Image is wider than target - fit to width
+            scaledWidth = outputWidthPx;
+            scaledHeight = outputWidthPx / originalAspectRatio;
+        } else {
+            // Image is taller than target - fit to height
+            scaledHeight = outputHeightPx;
+            scaledWidth = outputHeightPx * originalAspectRatio;
+        }
+
+        // Calculate centering offsets
+        const offsetX = (outputWidthPx - scaledWidth) / 2;
+        const offsetY = (outputHeightPx - scaledHeight) / 2;
 
         const cols = Math.ceil(outputWidthPx / (printableWidth - OVERLAP_INCHES * DPI));
         const rows = Math.ceil(outputHeightPx / (printableHeight - OVERLAP_INCHES * DPI));
@@ -132,12 +154,38 @@ async function generateSegments() {
         scaledCanvas.height = outputHeightPx;
         const scaledCtx = scaledCanvas.getContext('2d');
 
-        // Draw scaled image
-        scaledCtx.drawImage(uploadedImage, 0, 0, outputWidthPx, outputHeightPx);
+        // Fill with white background
+        scaledCtx.fillStyle = '#ffffff';
+        scaledCtx.fillRect(0, 0, outputWidthPx, outputHeightPx);
+
+        // Draw scaled image centered
+        scaledCtx.drawImage(uploadedImage, offsetX, offsetY, scaledWidth, scaledHeight);
 
         // Generate each segment
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
+                // Calculate source position with overlap
+                const sourceX = col * (printableWidth - OVERLAP_INCHES * DPI);
+                const sourceY = row * (printableHeight - OVERLAP_INCHES * DPI);
+
+                // Calculate actual segment size (may be smaller for edge pieces)
+                const segmentWidth = Math.min(printableWidth, outputWidthPx - sourceX);
+                const segmentHeight = Math.min(printableHeight, outputHeightPx - sourceY);
+
+                // Check if this segment contains any part of the image
+                const segmentRight = sourceX + segmentWidth;
+                const segmentBottom = sourceY + segmentHeight;
+                const imageRight = offsetX + scaledWidth;
+                const imageBottom = offsetY + scaledHeight;
+
+                // Skip if segment is completely outside the image area
+                if (sourceX >= imageRight || 
+                    sourceY >= imageBottom || 
+                    segmentRight <= offsetX || 
+                    segmentBottom <= offsetY) {
+                    continue;
+                }
+
                 // Create segment canvas (full paper size)
                 const segmentCanvas = document.createElement('canvas');
                 segmentCanvas.width = PAPER_WIDTH_INCHES * DPI;
@@ -148,17 +196,9 @@ async function generateSegments() {
                 segmentCtx.fillStyle = '#ffffff';
                 segmentCtx.fillRect(0, 0, segmentCanvas.width, segmentCanvas.height);
 
-                // Calculate source position with overlap
-                const sourceX = col * (printableWidth - OVERLAP_INCHES * DPI);
-                const sourceY = row * (printableHeight - OVERLAP_INCHES * DPI);
-
-                // Calculate actual segment size (may be smaller for edge pieces)
-                const segmentWidth = Math.min(printableWidth, outputWidthPx - sourceX);
-                const segmentHeight = Math.min(printableHeight, outputHeightPx - sourceY);
-
                 // Draw image segment (centered in printable area)
-                const destX = MARGIN_INCHES * DPI;
-                const destY = MARGIN_INCHES * DPI;
+                const destX = SAFE_MARGIN_INCHES * DPI;
+                const destY = SAFE_MARGIN_INCHES * DPI;
 
                 segmentCtx.drawImage(
                     scaledCanvas,
@@ -172,30 +212,28 @@ async function generateSegments() {
                     segmentHeight
                 );
 
-                // Add registration marks at corners
-                const markSize = 15;
-                const markOffset = 10;
+                // Add registration marks at corners (within safe area)
+                const markOffset = SAFE_MARGIN_INCHES * DPI + REGISTRATION_MARK_OFFSET;
 
                 // Top-left
-                drawRegistrationMark(segmentCtx, markOffset, markOffset, markSize);
+                drawRegistrationMark(segmentCtx, markOffset, markOffset);
                 // Top-right
-                drawRegistrationMark(segmentCtx, segmentCanvas.width - markOffset, markOffset, markSize);
+                drawRegistrationMark(segmentCtx, segmentCanvas.width - markOffset, markOffset);
                 // Bottom-left
-                drawRegistrationMark(segmentCtx, markOffset, segmentCanvas.height - markOffset, markSize);
+                drawRegistrationMark(segmentCtx, markOffset, segmentCanvas.height - markOffset);
                 // Bottom-right
                 drawRegistrationMark(
                     segmentCtx,
                     segmentCanvas.width - markOffset,
-                    segmentCanvas.height - markOffset,
-                    markSize
+                    segmentCanvas.height - markOffset
                 );
 
-                // Add segment info text
+                // Add segment info text (within safe area)
                 segmentCtx.save();
                 segmentCtx.fillStyle = '#000000';
                 segmentCtx.font = '12px Arial';
-                segmentCtx.fillText(`Segment ${row + 1}-${col + 1} (${rows}x${cols})`, 30, 30);
-                segmentCtx.fillText(`${widthInput.value}" x ${heightInput.value}" artwork`, 30, 50);
+                segmentCtx.fillText(`Segment ${row + 1}-${col + 1} (${rows}x${cols})`, markOffset + 5, markOffset + 15);
+                segmentCtx.fillText(`${widthInput.value}" x ${heightInput.value}" artwork`, markOffset + 5, markOffset + 35);
                 segmentCtx.restore();
 
                 segments.push({
