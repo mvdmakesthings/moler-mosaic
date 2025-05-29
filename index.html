@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moler Mosaic - Large Format Artwork Printing</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -9,116 +9,101 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><rect x='3' y='3' width='7' height='7'/><rect x='14' y='3' width='7' height='7'/><rect x='14' y='14' width='7' height='7'/><rect x='3' y='14' width='7' height='7'/></svg>">
     <meta name="description" content="Create large-scale artwork by printing it on standard paper size with Moler Mosaic">
 </head>
-<body class="min-h-screen bg-gray-50 p-4">
-    <div class="max-w-4xl mx-auto space-y-6">
-        <div class="text-center">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Moler Mosaic</h1>
-            <p class="text-gray-600">Create large-scale artwork by printing it on standard paper</p>
+<body class="min-h-screen bg-main p-6">
+    <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-black mb-2 tracking-tight">Moler Mosaic</h1>
+            <p class="text-muted text-lg">Create large-scale artwork by printing it on standard paper</p>
         </div>
-
-        <!-- Upload Section -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center gap-2 mb-4">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                <h2 class="text-xl font-semibold">Upload Artwork</h2>
-            </div>
-            <p class="text-gray-600 mb-4">Upload your artwork image to begin creating your mosaic</p>
-            <div class="space-y-4">
-                <div>
-                    <input type="file" id="fileInput" accept="image/*" class="hidden">
-                    <button id="uploadButton" class="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors">
-                        <div class="text-center">
-                            <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" y1="3" x2="12" y2="15"></line>
-                            </svg>
-                            <p class="text-sm text-gray-600">Click to upload image</p>
-                        </div>
-                    </button>
-                </div>
-                <div id="previewContainer" class="text-center hidden">
-                    <div class="relative inline-block">
-                        <img id="previewImage" src="" alt="Uploaded artwork" class="max-w-full max-h-48 mx-auto rounded border">
-                        <canvas id="previewOverlay" class="absolute top-0 left-0 w-full h-full pointer-events-none"></canvas>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left: Artwork Preview Card -->
+            <div>
+                <div class="card flex flex-col items-center justify-center h-full min-h-[400px]">
+                    <div class="card-header mb-2">
+                        <span class="circle"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+                        <span class="card-title">Artwork Preview</span>
                     </div>
-                    <p id="imageSize" class="text-sm text-gray-600 mt-2"></p>
+                    <div id="previewContainer" class="w-full flex flex-col items-center">
+                        <div class="relative inline-block w-full max-w-xs md:max-w-full">
+                            <img id="previewImage" src="" alt="Uploaded artwork" class="max-w-full max-h-96 mx-auto rounded border">
+                            <canvas id="previewOverlay" class="absolute top-0 left-0 w-full h-full pointer-events-none"></canvas>
+                        </div>
+                        <p id="imageSize" class="text-sm text-muted mt-2"></p>
+                    </div>
+                </div>
+            </div>
+            <!-- Right: Upload and Output Dimensions Cards stacked -->
+            <div class="flex flex-col gap-8 h-full">
+                <!-- Upload Artwork Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="circle"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></span>
+                        <span class="card-title">Upload Artwork</span>
+                    </div>
+                    <div class="card-subtitle">Upload your artwork image to begin creating your mosaic</div>
+                    <div class="space-y-4">
+                        <div>
+                            <input type="file" id="fileInput" accept="image/*" class="hidden">
+                            <button id="uploadButton" class="w-full h-32 flex flex-col justify-center items-center border-2 border-dashed transition-colors">
+                                <svg class="w-10 h-10 mb-2 text-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                <span class="text-muted">Click to upload image</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Output Dimensions Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="circle"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"></path><path d="M3 9h18"></path><path d="M9 21V9"></path></svg></span>
+                        <span class="card-title">Output Dimensions</span>
+                    </div>
+                    <div class="card-subtitle">Specify the final size of your artwork in inches</div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="width" class="block text-sm font-medium text-muted mb-1">Width (inches)</label>
+                            <input type="number" id="width" min="1" max="200" step="0.5" value="24" class="w-full">
+                        </div>
+                        <div>
+                            <label for="height" class="block text-sm font-medium text-muted mb-1">Height (inches)</label>
+                            <input type="number" id="height" min="1" max="200" step="0.5" value="18" class="w-full">
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 rounded-lg bg-soft">
+                        <p class="text-sm text-orange">
+                            <strong>Estimated segments:</strong> <span id="estimatedSegments">0</span> pages
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- Size Configuration -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center gap-2 mb-4">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 3h18v18H3z"></path>
-                    <path d="M3 9h18"></path>
-                    <path d="M9 21V9"></path>
-                </svg>
-                <h2 class="text-xl font-semibold">Output Dimensions</h2>
+        <!-- Generate Segments Card -->
+        <div class="card mt-8">
+            <div class="card-header">
+                <span class="circle"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span>
+                <span class="card-title">Generate Mosaic</span>
             </div>
-            <p class="text-gray-600 mb-4">Specify the final size of your artwork in inches</p>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label for="width" class="block text-sm font-medium text-gray-700 mb-1">Width (inches)</label>
-                    <input type="number" id="width" min="1" max="200" step="0.5" value="24" class="w-full px-3 py-2 border rounded-md">
-                </div>
-                <div>
-                    <label for="height" class="block text-sm font-medium text-gray-700 mb-1">Height (inches)</label>
-                    <input type="number" id="height" min="1" max="200" step="0.5" value="18" class="w-full px-3 py-2 border rounded-md">
-                </div>
-            </div>
-            <div class="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p class="text-sm text-blue-800">
-                    <strong>Estimated segments:</strong> <span id="estimatedSegments">0</span> pages
-                </p>
-            </div>
-        </div>
-
-        <!-- Generate Segments -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center gap-2 mb-4">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-                <h2 class="text-xl font-semibold">Generate Mosaic</h2>
-            </div>
-            <p class="text-gray-600 mb-4">Create printable segments with registration marks</p>
-            <button id="generateButton" class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            <div class="card-subtitle">Create printable segments with registration marks</div>
+            <button id="generateButton" class="w-full transition-colors">
                 Generate Printable Segments
             </button>
         </div>
-
-        <!-- Download Segments -->
-        <div id="downloadSection" class="bg-white rounded-lg shadow p-6 hidden">
-            <div class="flex items-center gap-2 mb-4">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <h2 class="text-xl font-semibold">Download Segments</h2>
+        <!-- Download Segments Card -->
+        <div id="downloadSection" class="card hidden mt-8">
+            <div class="card-header">
+                <span class="circle"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></span>
+                <span class="card-title">Download Segments</span>
             </div>
-            <p class="text-gray-600 mb-4">Download individual segments or all at once</p>
+            <div class="card-subtitle">Download individual segments or all at once</div>
             <div class="space-y-4">
-                <button id="downloadAllButton" class="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                <button id="downloadAllButton" class="w-full transition-colors">
                     Download All Segments (<span id="segmentCount">0</span> files)
                 </button>
-
                 <div id="segmentsGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     <!-- Segments will be inserted here -->
                 </div>
-
-                <div class="mt-4 p-4 bg-yellow-50 rounded-lg">
-                    <h4 class="font-semibold text-yellow-800 mb-2">Assembly Instructions:</h4>
-                    <ul class="text-sm text-yellow-700 space-y-1">
+                <div class="mt-4 p-4 rounded-lg bg-soft">
+                    <h4 class="font-semibold mb-2 text-main">Assembly Instructions:</h4>
+                    <ul class="text-sm text-muted space-y-1">
                         <li>• Print each segment on 8.5" × 11" paper at 100% scale (no scaling)</li>
                         <li>• Use the registration marks (crosshairs) at corners for alignment</li>
                         <li>• Start with segment 1-1 (top-left) and work row by row</li>
@@ -129,7 +114,6 @@
             </div>
         </div>
     </div>
-
     <script src="./app.js"></script>
 </body>
 </html> 
