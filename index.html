@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Artwork Segmenter</title>
+    <title>Moler Mosaic - Large Format Artwork Printing</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="./styles.css" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><rect x='3' y='3' width='7' height='7'/><rect x='14' y='3' width='7' height='7'/><rect x='14' y='14' width='7' height='7'/><rect x='3' y='14' width='7' height='7'/></svg>">
-    <meta name="description" content="Split large artwork into printable segments for standard paper size">
+    <meta name="description" content="Create large-scale artwork by printing it on standard paper size with Moler Mosaic">
 </head>
 <body class="min-h-screen bg-gray-50 p-4">
     <div class="max-w-4xl mx-auto space-y-6">
         <div class="text-center">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Artwork Segmenter</h1>
-            <p class="text-gray-600">Upload artwork and segment it for large-format printing on standard paper</p>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Moler Mosaic</h1>
+            <p class="text-gray-600">Create large-scale artwork by printing it on standard paper</p>
         </div>
 
         <!-- Upload Section -->
@@ -26,7 +26,7 @@
                 </svg>
                 <h2 class="text-xl font-semibold">Upload Artwork</h2>
             </div>
-            <p class="text-gray-600 mb-4">Upload your artwork image to begin segmentation</p>
+            <p class="text-gray-600 mb-4">Upload your artwork image to begin creating your mosaic</p>
             <div class="space-y-4">
                 <div>
                     <input type="file" id="fileInput" accept="image/*" class="hidden">
@@ -85,7 +85,7 @@
                     <rect x="14" y="14" width="7" height="7"></rect>
                     <rect x="3" y="14" width="7" height="7"></rect>
                 </svg>
-                <h2 class="text-xl font-semibold">Generate Segments</h2>
+                <h2 class="text-xl font-semibold">Generate Mosaic</h2>
             </div>
             <p class="text-gray-600 mb-4">Create printable segments with registration marks</p>
             <button id="generateButton" class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">

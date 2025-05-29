@@ -200,7 +200,7 @@ async function generateSegments() {
 
                 segments.push({
                     canvas: segmentCanvas,
-                    filename: `artwork_segment_${row + 1}-${col + 1}.png`,
+                    filename: `moler_mosaic_${row + 1}-${col + 1}.png`,
                     row: row + 1,
                     col: col + 1
                 });

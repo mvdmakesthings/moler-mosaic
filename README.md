@@ -1,6 +1,6 @@
-# Artwork Segmenter
+# Moler Mosaic
 
-A web application that helps you print large artwork on standard 8.5" × 11" paper. Upload your artwork, specify the desired output size, and the app will generate printable segments with registration marks for easy assembly.
+A web application that helps artists create large-scale artwork by printing it on standard 8.5" × 11" paper. Upload your artwork, specify the desired output size, and Moler Mosaic will generate printable segments with registration marks for easy assembly.
 
 ## Features
 
